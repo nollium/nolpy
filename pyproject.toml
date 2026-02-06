@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pysock-url"
+version = "0.1.0"
+description = "A unified, Pythonic interface for TCP and TLS streams using URL-based addressing"
+readme = "README.md"
+requires-python = ">=3.7"
+authors = [
+    { name = "Nol" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+keywords = ["socket", "tls", "tcp", "url"]
+
+[project.urls]
+Homepage = "https://github.com/nollium/pysock-url"
+
+[tool.setuptools]
+py-modules = ["pysock_url"]
