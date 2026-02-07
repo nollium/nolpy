@@ -21,5 +21,13 @@ keywords = ["socket", "tls", "tcp", "url"]
 [project.urls]
 Homepage = "https://github.com/nollium/pysock-url"
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
 [tool.setuptools]
-py-modules = ["pysock_url"]
+packages = ["nolpy"]
+
+[tool.setuptools.package-data]
+nolpy = ["py.typed"]
