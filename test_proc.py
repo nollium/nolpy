@@ -138,6 +138,24 @@ class TestProc(unittest.TestCase):
         finally:
             sys.stdout = old_stdout
 
+    def test_null_byte_errors(self):
+        from nolpy.proc import ProcessError
+
+        # Test null byte in sh
+        with self.assertRaises(ProcessError) as cm:
+            sh("echo \x00")
+        self.assertIn("null bytes", str(cm.exception))
+
+        # Test null byte in ex path
+        with self.assertRaises(ProcessError) as cm:
+            ex("ls\x00")
+        self.assertIn("null bytes", str(cm.exception))
+
+        # Test null byte in ex args
+        with self.assertRaises(ProcessError) as cm:
+            ex("ls", "\x00")
+        self.assertIn("null bytes", str(cm.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,12 @@ import sys
 from typing import Union, Optional
 
 
+class ProcessError(Exception):
+    """Custom exception for process-related failures."""
+
+    pass
+
+
 class ProcessProxy:
     """
     A unified wrapper for subprocess interaction.
@@ -202,16 +208,23 @@ def sh(cmd: str, env: Optional[dict] = None, auto_drain: bool = True) -> Process
     Returns:
         ProcessProxy: An interactive wrapper for the process.
     """
-    proc = subprocess.Popen(
-        cmd,
-        shell=True,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env or os.environ.copy(),
-        bufsize=0,  # Unbuffered
-    )
-    return ProcessProxy(proc, auto_drain=auto_drain)
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env or os.environ.copy(),
+            bufsize=0,  # Unbuffered
+        )
+        return ProcessProxy(proc, auto_drain=auto_drain)
+    except ValueError as e:
+        if "null byte" in str(e):
+            raise ProcessError(
+                f"Command contains null bytes, which is not allowed by the OS: {cmd!r}"
+            ) from e
+        raise
 
 
 def ex(
@@ -241,17 +254,24 @@ def ex(
 
     cmd_args = [_to_bytes(argv0)] + [_to_bytes(a) for a in args]
 
-    proc = subprocess.Popen(
-        cmd_args,
-        executable=bin_path,
-        shell=False,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env or os.environ.copy(),
-        bufsize=0,
-    )
-    return ProcessProxy(proc, auto_drain=auto_drain)
+    try:
+        proc = subprocess.Popen(
+            cmd_args,
+            executable=bin_path,
+            shell=False,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env or os.environ.copy(),
+            bufsize=0,
+        )
+        return ProcessProxy(proc, auto_drain=auto_drain)
+    except ValueError as e:
+        if "null byte" in str(e):
+            raise ProcessError(
+                f"Arguments or path contain null bytes, which is not allowed by the OS: {cmd_args!r}"
+            ) from e
+        raise
 
 
 def wine_exec(
