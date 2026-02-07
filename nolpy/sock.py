@@ -6,7 +6,7 @@ import socket
 import ssl
 import urllib.parse
 import http.client
-from typing import BinaryIO, Optional, Union, Dict
+from typing import BinaryIO, Optional, Union
 
 
 class SocketURLError(Exception):
@@ -23,9 +23,11 @@ class FlushProxy:
         self._auto_drain = auto_drain
         self._closed = False
 
-    def write(self, data: Union[bytes, str]) -> int:
+    def write(self, data: Union[bytes, str, bytearray]) -> int:
         if isinstance(data, str):
             data = data.encode("latin-1")
+        elif isinstance(data, bytearray):
+            data = bytes(data)
         n = self._obj.write(data)
         self._obj.flush()
         return n
@@ -104,11 +106,11 @@ class FlushProxy:
         except Exception:
             pass
 
-    def send(self, data: bytes) -> int:
+    def send(self, data: Union[bytes, str, bytearray]) -> int:
         """Shim for write."""
         return self.write(data)
 
-    def sendall(self, data: bytes) -> None:
+    def sendall(self, data: Union[bytes, str, bytearray]) -> None:
         """Shim for write (already flushes)."""
         self.write(data)
 

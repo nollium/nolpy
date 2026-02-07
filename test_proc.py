@@ -156,6 +156,19 @@ class TestProc(unittest.TestCase):
             ex("ls", "\x00")
         self.assertIn("null bytes", str(cm.exception))
 
+    def test_bytearray_support(self):
+        # Test bytearray in ex
+        with ex(bytearray(b"echo"), bytearray(b"hello")) as p:
+            out = p.read().strip()
+            self.assertEqual(out, b"hello")
+
+        # Test bytearray in write
+        with sh("cat") as p:
+            p.write(bytearray(b"world"))
+            # Read first to avoid auto_drain discarding it on close
+            out = p.read(5).strip()
+            self.assertEqual(out, b"world")
+
 
 if __name__ == "__main__":
     unittest.main()

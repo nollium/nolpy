@@ -30,21 +30,23 @@ class ProcessProxy:
         self._auto_drain = auto_drain
         self._closed = False
 
-    def write(self, data: Union[bytes, str]) -> int:
+    def write(self, data: Union[bytes, str, bytearray]) -> int:
         """Writes to process stdin and flushes immediately."""
         if self._stdin is None or self._closed:
             return 0
         if isinstance(data, str):
             data = data.encode("latin-1")
+        elif isinstance(data, bytearray):
+            data = bytes(data)
         n = self._stdin.write(data)
         self._stdin.flush()
         return n
 
-    def send(self, data: Union[bytes, str]) -> int:
+    def send(self, data: Union[bytes, str, bytearray]) -> int:
         """Shim for write."""
         return self.write(data)
 
-    def sendall(self, data: Union[bytes, str]) -> None:
+    def sendall(self, data: Union[bytes, str, bytearray]) -> None:
         """Shim for write (already flushes)."""
         self.write(data)
 
@@ -129,8 +131,11 @@ class ProcessProxy:
                     break
 
                 for key, _ in events:
-                    # Since it's non-blocking, read() returns immediately
-                    data = key.fileobj.read(4096)
+                    try:
+                        data = key.fileobj.read(4096)
+                    except Exception:
+                        data = None
+
                     if data:
                         key.data.write(data)
                         key.data.flush()
@@ -228,9 +233,9 @@ def sh(cmd: str, env: Optional[dict] = None, auto_drain: bool = True) -> Process
 
 
 def ex(
-    path: Union[str, bytes],
-    *args: Union[str, bytes],
-    argv0: Optional[Union[str, bytes]] = None,
+    path: Union[str, bytes, bytearray],
+    *args: Union[str, bytes, bytearray],
+    argv0: Optional[Union[str, bytes, bytearray]] = None,
     env: Optional[dict] = None,
     auto_drain: bool = True,
 ) -> ProcessProxy:
@@ -246,11 +251,13 @@ def ex(
     """
 
     def _to_bytes(s):
+        if isinstance(s, bytearray):
+            return bytes(s)
         return s.encode("latin-1") if isinstance(s, str) else s
 
     bin_path = _to_bytes(path)
     if argv0 is None:
-        argv0 = os.path.basename(path)
+        argv0 = os.path.basename(bin_path)
 
     cmd_args = [_to_bytes(argv0)] + [_to_bytes(a) for a in args]
 
@@ -275,8 +282,8 @@ def ex(
 
 
 def wine_exec(
-    path: Union[str, bytes],
-    *args: Union[str, bytes],
+    path: Union[str, bytes, bytearray],
+    *args: Union[str, bytes, bytearray],
     env: Optional[dict] = None,
     auto_drain: bool = True,
 ) -> ProcessProxy:

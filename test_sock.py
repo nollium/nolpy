@@ -1,4 +1,5 @@
 import unittest
+import io
 from unittest.mock import MagicMock, patch
 import socket
 import ssl
@@ -215,6 +216,12 @@ class TestPySockURL(unittest.TestCase):
 
         self.assertEqual(res, expected)
         mock_obj.close.assert_not_called()
+
+    def test_flush_proxy_bytearray_write(self):
+        buf = io.BytesIO()
+        proxy = FlushProxy(buf)
+        proxy.write(bytearray(b"hello"))
+        self.assertEqual(buf.getvalue(), b"hello")
 
 
 if __name__ == "__main__":
